@@ -248,7 +248,7 @@ if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
     if buffer[1] == "2" 
     {  
        # SLOG STAVAKA - DIJAGNOZA
-         msg emsg "%NTU SAM2"
+         #msg emsg "%NTU SAM2"
 		math%.0 rbrDij =rbrDij + 1
          jpl insertDijag
           cat priorpb_ebroj buffer[2]
