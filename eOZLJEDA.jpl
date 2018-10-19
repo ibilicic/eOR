@@ -2,7 +2,7 @@
 
 vars OrigOZ brPolja GresOZ
 
-#msg emsg "%N TU SAM NA PO»ETKU"
+#msg emsg "%N TU SAM NA POƒåETKU"
 vars gr_msg, gr_code1 gr_code2 Urudz rbrDij 
 
 vars kojakl godo priorpb_brpred brkom(2) urubroj redbro
@@ -20,11 +20,11 @@ vars ukOR ukORv
 
 proc Inicijalizacija
 # prva procedura koja se poziva iz sjamloada (report). 
-# VAéNO: Ako iz ove procedure izaemo sa -1 izaÊi Êemo i iz sjamloada i to uz
-# "ABNORMAL TERMINATION". U sluËaju da izaemo sa obiËnim returnom tada Êemo uÊi
-# u slijedeÊu proceduru u sjamloadu, a to je proc UlazOZ. 
+# VA≈ΩNO: Ako iz ove procedure izaƒëemo sa -1 izaƒái ƒáemo i iz sjamloada i to uz
+# "ABNORMAL TERMINATION". U sluƒçaju da izaƒëemo sa obiƒçnim returnom tada ƒáemo uƒái
+# u slijedeƒáu proceduru u sjamloadu, a to je proc UlazOZ. 
 
-msg emsg "Datoteku obraujemo programom: eOZLJEDA v.1.0" 
+msg emsg "Datoteku obraƒëujemo programom: eOZLJEDA v.1.0" 
 msg emsg ""
 msg emsg ""
 
@@ -32,13 +32,13 @@ retvar ret
 
 #ne znam da li mi treba
 #****
-# Otvaramo file i Ëitamo datum zaprimanja  
-#promjeni ime file-a kad doe do tog
+# Otvaramo file i ƒçitamo datum zaprimanja  
+#promjeni ime file-a kad doƒëe do tog
 #call File_open "datumOZ.txt" 'r'
 #if ret != 0
 #{
 #  msg emsg "Ne mogu otvoriti datoteku <datumOZ.txt>."
-#  msg emsg "1. Moûda je File system prepunjen?"
+#  msg emsg "1. Mo≈æda je File system prepunjen?"
 #  msg emsg "2. Kakvi su permission za datoteku?" 
 #  return -1 
 #}
@@ -49,7 +49,7 @@ retvar ret
 #cat datum_Zapr Tmp_date     
 #****
 #za sad fiksno
-#ovisno o nazivu datoteke pozivamo samo odreeni dio
+#ovisno o nazivu datoteke pozivamo samo odreƒëeni dio
 #smisli kako prenijet parametar iz ksh skripte u ovaj jpl
 call File_open 'eOZ.txt' 'r'
 call File_read 'eOZ.txt' 'Buffer3'
@@ -66,7 +66,7 @@ call File_open ":OrigOZ" 'r'
 if ret != 0
 {
   msg emsg "Ne mogu otvoriti datoteku <:OrigOZ>."
-  msg emsg "1. Moûda je File system prepunjen?"
+  msg emsg "1. Mo≈æda je File system prepunjen?"
   msg emsg "2. Kakvi su permission za datoteku?" 
   return -1 
 }
@@ -75,23 +75,23 @@ if ret != 0
 return
 
 proc UlazOZ
-# ulazna toËka u program (poziv iz init sekvence putem sjamload-a)
-# VAéNO: Ova proc uz proc Inicijalizacija su i izlazne procedure iz sjamload -
+# ulazna toƒçka u program (poziv iz init sekvence putem sjamload-a)
+# VA≈ΩNO: Ova proc uz proc Inicijalizacija su i izlazne procedure iz sjamload -
 # Iz proc Inicijalizacija izlazi se VAN sa return -1, iz ove procedure 
-# izlazi sa bilo kakvim return -om. ALI  return-1 Êe napraviti
-# "ABNORMAL TERMINATION# dok return neÊe! A taj je podatak vaûan ksh skripti 
-# koja gleda na kakav je naËin sjamload zavröio 
+# izlazi sa bilo kakvim return -om. ALI  return-1 ƒáe napraviti
+# "ABNORMAL TERMINATION# dok return neƒáe! A taj je podatak va≈æan ksh skripti 
+# koja gleda na kakav je naƒçin sjamload zavr≈°io 
 
-#prije poËetka postavljamo redni br. dijagnoze na 1
+#prije poƒçetka postavljamo redni br. dijagnoze na 1
 math%.0 rbrDij = 0
 cat GresOZ "0"
 
 retvar ret  
 while 1==1
 {
-  # S ove 3 linije Ëitamo red podataka iz datoteke i isti dijelimo u varijablu 
-  # buffer koja je polje. Svaki Ëlan polja dobiva podatak omeen sa dvotoËkom. 
-  # Izlaz iz funkcije File_parse je broj Ëlanova polja!!! 
+  # S ove 3 linije ƒçitamo red podataka iz datoteke i isti dijelimo u varijablu 
+  # buffer koja je polje. Svaki ƒçlan polja dobiva podatak omeƒëen sa dvotoƒçkom. 
+  # Izlaz iz funkcije File_parse je broj ƒçlanova polja!!! 
   call sm_n_clear_array("buffer")
   call File_parse :OrigOZ "buffer" "||"
 
@@ -102,10 +102,10 @@ while 1==1
 #doradi IB
   if brPolja <= 0 
   {
-    msg emsg "Datoteka :OrigOZ  proËitana"
+    msg emsg "Datoteka :OrigOZ  proƒçitana"
     break
   } 
-##  # brojaË slogova - znamo o kojem se redu datoteke radi, a i gdje je puklo 
+##  # brojaƒç slogova - znamo o kojem se redu datoteke radi, a i gdje je puklo 
 ##  math %.0 ukSlog = ukSlog +1
   
 ##  # Poruka na ekranu o napredovanju      
@@ -113,31 +113,31 @@ while 1==1
 ##  if tmpPosto != Posto
 ##  {
 ##    cat Posto tmpPosto
-##    msg emsg "Datoteka: :ImeDatoteke =>Obraeno :Posto % -> (:ukSlog redova)" 
+##    msg emsg "Datoteka: :ImeDatoteke =>Obraƒëeno :Posto % -> (:ukSlog redova)" 
 ##  }
 
-##  # SlijedeÊi if sluûi u sluËaju da je datoteka pukla. Dio koda za provjeru i
-##  # upis podataka se preskaËe sve dok se ne doe do reda zadnjeg uËitanog, ali
-##  # NE i commitiranog(rollbackanog) raËuna. Taj raËun ponavljamo!
+##  # Slijedeƒái if slu≈æi u sluƒçaju da je datoteka pukla. Dio koda za provjeru i
+##  # upis podataka se preskaƒçe sve dok se ne doƒëe do reda zadnjeg uƒçitanog, ali
+##  # NE i commitiranog(rollbackanog) raƒçuna. Taj raƒçun ponavljamo!
   
 ##  if ukSlog >= StartRed 
 ##  {
 ##    if ImeDatoteke == "" && ukSlog >=0
 ##    { 
-##      msg emsg "Namjerno producirana pogreöka" 
-##      msg emsg "GREäKA: Izlaz uslijed greöke" 
+##      msg emsg "Namjerno producirana pogre≈°ka" 
+##      msg emsg "GRE≈†KA: Izlaz uslijed gre≈°ke" 
 ##      return -1
 ##    }
 #msg emsg "%NOrigOZ :OrigOZ(1,2)"
-#ovisno o vrsti datoteke izvröavam odreeni dio koda
+#ovisno o vrsti datoteke izvr≈°avam odreƒëeni dio koda
 cat ozgres_id ""
 dbms BEGIN
 ##if OrigOZ(1,2) == "P_"
-#08052017 dodano da kad doe P_AAAAAAAAAAA_BB_CCCCC.txt gdje nije BB 01, da
-#ne izbacujem da veÊ postoji nego radim update na dijagnoze i doktorski dio
+#08052017 dodano da kad doƒëe P_AAAAAAAAAAA_BB_CCCCC.txt gdje nije BB 01, da
+#ne izbacujem da veƒá postoji nego radim update na dijagnoze i doktorski dio
 if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
 {
-#provjera da li veÊ prijava za taj ebroj postoji
+#provjera da li veƒá prijava za taj ebroj postoji
 #naknadno ugradi uvijet za storno ako bude trebalo
 
 	vars p_id
@@ -146,27 +146,27 @@ if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
 		where ebroj = ":buffer[2]"
 	dbms alias 
 #	msg emsg "TU SAM :p_id"
-#problem...jer ne ode dalje na slogove stavki pa to pitam samo kod vodeÊeg sloga
+#problem...jer ne ode dalje na slogove stavki pa to pitam samo kod vodeƒáeg sloga
 	if p_id != "" && buffer[1] == "1"
 	{
-       msg emsg "VeÊ postoji slog prijave :p_id sa ebrojem :buffer[2]!"
+       msg emsg "Veƒá postoji slog prijave :p_id sa ebrojem :buffer[2]!"
 	   cat GresOZ "1"
-	   jpl GreskaOzljeda (":buffer[2]","VeÊ postoji slog prijave :p_id sa ebrojem :buffer[2]!")
+	   jpl GreskaOzljeda (":buffer[2]","Veƒá postoji slog prijave :p_id sa ebrojem :buffer[2]!")
        return 
 	}
-    # Sada gledamo koja je vrsta sloga (VodeÊi slog ili stavka )
+    # Sada gledamo koja je vrsta sloga (Vodeƒái slog ili stavka )
     if buffer[1] == "1"  
     {  
-	  # VODE∆I SLOG 
+	  # VODEƒÜI SLOG 
 		math%.0 ukOR =ukOR + 1
 		jpl urudzbirajOZ
         if ret == -1 
         {
           msg emsg "Datoteka: :OrigOZ za e_broj :buffer[2]"
           msg emsg "Program je pao u proceduri <urudzbiraj>!"
-          msg emsg "DB Stanje greöke: :@dmengerrcode/:@dmretcode"
+          msg emsg "DB Stanje gre≈°ke: :@dmengerrcode/:@dmretcode"
           msg emsg "Opis: :@dmengerrmsg"
-          msg emsg "GREäKA: Izlaz uslijed greöke" 
+          msg emsg "GRE≈†KA: Izlaz uslijed gre≈°ke" 
           return -1
         }
         msg emsg "Urudz :Urudz"
@@ -177,14 +177,14 @@ if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
         {
           msg emsg "Datoteka: :OrigOZ za e_broj :buffer[2]"
           msg emsg "Program je pao u proceduri <insIntKnjiOZ>!"
-          msg emsg "DB Stanje greöke: :@dmengerrcode/:@dmretcode"
+          msg emsg "DB Stanje gre≈°ke: :@dmengerrcode/:@dmretcode"
           msg emsg "Opis: :@dmengerrmsg"
-          msg emsg "GREäKA: Izlaz uslijed greöke" 
+          msg emsg "GRE≈†KA: Izlaz uslijed gre≈°ke" 
           return -1
         }
 
 		jpl insertPrijaveOZ
-		# kad uspijem insertirati Prijavu, naem id za ostale tablice
+		# kad uspijem insertirati Prijavu, naƒëem id za ostale tablice
 		dbms alias OZid
 		sql select id from priorpb \
 			where ebroj = ":buffer[2]"
@@ -194,7 +194,7 @@ if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
 		if OZid != ""
            jpl insertOstaloOZ
 	#tu staviti da se formira izlazni txt sa ur.brojem
-    #kako sprijeËiti da se dvaput isto urudûbira - premjestila ovdje
+    #kako sprijeƒçiti da se dvaput isto urud≈æbira - premjestila ovdje
         jpl vratiUruPrvi
     }
     else if buffer[1] == "2"  && OZid != ""
@@ -218,18 +218,18 @@ if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
     }
 	else
     {  
-			msg emsg "GREäKA Pogreöna oznaka sloga za OZid :OZid!"
+			msg emsg "GRE≈†KA Pogre≈°na oznaka sloga za OZid :OZid!"
 			return -1
     } 
 
 	#tu staviti da se formira izlazni txt sa ur.brojem
-    #kako sprijeËiti da se dvaput isto urudûbira - premjestila gore
+    #kako sprijeƒçiti da se dvaput isto urud≈æbira - premjestila gore
 #    jpl vratiUruPrvi
 }
 #   msg emsg "%NTU SAM prije 02 Buffer3 /:Buffer3(1,2)/:Buffer3(4,2)/"
 if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
 {
-   # naem id za brûi update
+   # naƒëem id za br≈æi update
    if buffer[1] == "1"  
    {
    #msg emsg "%NTU SAM1,buffer[2]/:buffer[2]/"
@@ -262,9 +262,9 @@ if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
 #if OrigOZ(1,2) == "V_"
 if Buffer3(1,2) == "_V"
 {
-    # Sada gledamo koja je vrsta sloga (VodeÊi slog ili stavka )
-	#msg emsg "%N»itam datoteku V_ buffer1 /:buffer[1]/"
-		# naem id za brûi update
+    # Sada gledamo koja je vrsta sloga (Vodeƒái slog ili stavka )
+	#msg emsg "%Nƒåitam datoteku V_ buffer1 /:buffer[1]/"
+		# naƒëem id za br≈æi update
 
 		dbms alias OZid, datzap, predmet_klozna, predmet_flid, ulakt_urubro, \
 		 priorpb_goddok, priorpb_evbrdok,priorpb_obvupl_flid, \
@@ -276,7 +276,7 @@ if Buffer3(1,2) == "_V"
 		dbms alias 
     if buffer[1] == "1" 
     {  
-	  # VODE∆I SLOG 
+	  # VODEƒÜI SLOG 
 		math%.0 ukORv =ukORv + 1
 
     	jpl updateOz
@@ -303,7 +303,7 @@ if Buffer3(1,2) == "_V"
 if Buffer3(1,2) == "_Z"
 {
 #	msg emsg "Zakaj nisam u Z_ :OrigOZ/:Buffer3"
-    # Datoteka - zahtjev za urudûbenim brojem za sve vrste akcija
+    # Datoteka - zahtjev za urud≈æbenim brojem za sve vrste akcija
 		dbms alias priorpb_id, priorpb_obvupl_flid, priorpb_obvupl_id, \
 		priorpb_goddok, priorpb_evbrdok, datzap, \
 		predmet_klozna,  predmet_flid, ulakt_urubro
@@ -358,7 +358,7 @@ return
 
 proc insPredmetOZ
    cat kojakl "502-03-02" 
-#buffer[3] podruËna sluûba
+#buffer[3] podruƒçna slu≈æba
 #buffer[82] datum popunjavanja tiskanice od strane poslodavca
    cat godo ":curr_date"
    dbms alias priorpb_brpred 
@@ -366,8 +366,8 @@ proc insPredmetOZ
    and godotv=":godo(7,4)" and kladok_klasa=":kojakl" and posozn="I"
 
 #msg emsg "%N godo, kojakl, :godo, :kojakl,:priorpb_brpred"
-#kreÊem s 3000
-#u EUP su brojevi veÊ doöli do 2200 da se ne dupla po predmetima
+#kreƒáem s 3000
+#u EUP su brojevi veƒá do≈°li do 2200 da se ne dupla po predmetima
    if (priorpb_brpred=='' ) && godo(7,4) = 2017 && buffer[3] != 114
       cat priorpb_brpred '3000'
    else if (priorpb_brpred=='' ) && godo(7,4) = 2017 && buffer[3] == 114
@@ -382,7 +382,7 @@ proc insPredmetOZ
 #   msg emsg "buffer3 :buffer[3]"
    cat priorpb_predmet_flid ":buffer[3]"                      
 
-# traûimo öifru organizacijske jedinice
+# tra≈æimo ≈°ifru organizacijske jedinice
   dbms declare ur cursor for select sifuru from orgjed  \
        where sif = :buffer[3]
   dbms with cursor ur alias orgjed_sifuru
@@ -405,7 +405,7 @@ proc insPredmetOZ
 #****************
 #DORADI
 #promjeni buffer-e prema potrebi
-#doradi dijelove koji su razliËito ovisno o vrsti unl datoteke 
+#doradi dijelove koji su razliƒçito ovisno o vrsti unl datoteke 
 #uglavnom je to insert u ulakt
 #****************
 cat priorpb_ebroj        buffer[2]
@@ -441,7 +441,7 @@ cat predmet_mjnas_id_p   ulakt_mjnas_id_na
   dbms onerror jpl handleError
   if (gr_code1 != 0 || gr_code2 != 0)
   {
-#    jpl upisi_Poruke_Oper "Za raËun br. :buffer[4] nije uspio insert u urudûbeni <:gr_code1/:gr_code2>"
+#    jpl upisi_Poruke_Oper "Za raƒçun br. :buffer[4] nije uspio insert u urud≈æbeni <:gr_code1/:gr_code2>"
     cat Urudz "FALSE"  
  #   cat Pozor_Operater "TRUE"
  ##   dbms rollback
@@ -470,9 +470,9 @@ if Buffer3(1,2) == "_V"
  sql select naziv from ozvrdat   \
 	 where id = :buffer[6]
  dbms alias 
- msg emsg "%Nozvrdat_naziv,OZid  /:ozvrdat_naziv/:OZid/"
+# msg emsg "%Nozvrdat_naziv,OZid  /:ozvrdat_naziv/:OZid/"
 #}
-# traûimo max urudû. broj za naöu klasu
+# tra≈æimo max urud≈æ. broj za na≈°u klasu
  if  Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
  {
      cat predmet_flid priorpb_predmet_flid
@@ -539,8 +539,8 @@ if Buffer3(1,2) == "_V"
   cat ulakt_tippos "O"
   cat ulakt_oib buffer[11]
 #  msg emsg "ulakt_oib :ulakt_oib"
-##ako je naö djelatnik, podmetni njegove podatke
-#za sad stavim MBO... moûda ipak e-ozljeda
+##ako je na≈° djelatnik, podmetni njegove podatke
+#za sad stavim MBO... mo≈æda ipak e-ozljeda
 #  cat ulakt_usruno buffer[71]
   cat ulakt_usruno "e-ozljeda"
   cat ulakt_predmet_flid predmet_flid
@@ -549,18 +549,18 @@ if Buffer3(1,2) == "_V"
 #doradi 08052018
 if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
   {
-  #99     383     Ostale organizacije udruûenog rada
+  #99     383     Ostale organizacije udru≈æenog rada
   cat ulakt_mjnas_id "99" 
   #30     Evidencija
-  #ipak 31 Rjeöenje
+  #ipak 31 Rje≈°enje
   cat ulakt_vrakta_sifra "31"
   }
 if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
   {
   #izabrani doktor
-  #141	381	Zdravstvo i socijalna zaötita
+  #141	381	Zdravstvo i socijalna za≈°tita
   cat ulakt_mjnas_id "141" 
-  #08052018 vidi joö
+  #08052018 vidi jo≈°
   #65 Dokumentacija     73 Odgovor
   cat ulakt_vrakta_sifra "65"
   #TU SAM1
@@ -575,11 +575,11 @@ if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
 if Buffer3(1,2) == "_Z" || Buffer3(1,2) == "_V"
   {
      cat ulakt_urubro ulakt_urubro(1,13) urubroj
-  # za veÊinu 338-xx-13  Odjel za zdravstveno osiguranje, pravne i opÊe pos
+  # za veƒáinu 338-xx-13  Odjel za zdravstveno osiguranje, pravne i opƒáe pos
   # osim za sifuru -08, -14,-17- i -21-
-  #oni (RU) imaju -81 Odsjek za zdravstveno osiguranje zaötite zdravlja
+  #oni (RU) imaju -81 Odsjek za zdravstveno osiguranje za≈°tite zdravlja
   #iz ulakt_urubro
-  #za sva rjeöenja
+  #za sva rje≈°enja
   #if buffer[6] == "1" || buffer[6] == "2" || buffer[6] == "4" || \
 #	 (buffer[6] >= "6" && buffer[6] <= "11")
 #  {
@@ -589,7 +589,7 @@ if Buffer3(1,2) == "_Z" || Buffer3(1,2) == "_V"
   cat ulakt_mjnas_id_na ulakt_mjnas_id
   #msg emsg "TUTUulakt_mjnas_id :ulakt_mjnas_id, :ulakt_urubro(1,9)"
 #  }
-  #99     383     Ostale organizacije udruûenog rada
+  #99     383     Ostale organizacije udru≈æenog rada
   if buffer[6] == "3" || buffer[6] == "13"
      cat ulakt_mjnas_id "99" 
   #LP
@@ -604,14 +604,14 @@ if Buffer3(1,2) == "_Z" || Buffer3(1,2) == "_V"
 
   cat ulakt_brdokp buffer[2]
   #izabrani doktor
-  #141	381	Zdravstvo i socijalna zaötita
+  #141	381	Zdravstvo i socijalna za≈°tita
   if buffer[6] == "12"
      cat ulakt_mjnas_id "141" 
 
-  #21 Miöljenje
+  #21 Mi≈°ljenje
   if buffer[6] == "5" 
      cat ulakt_vrakta_sifra "21"
-  #31 Rjeöenje
+  #31 Rje≈°enje
   if buffer[6] >= 6 && buffer[6] <= 11 
      cat ulakt_vrakta_sifra "31"
   #32 Zahtjev
@@ -623,7 +623,7 @@ if Buffer3(1,2) == "_Z" || Buffer3(1,2) == "_V"
   #72 Dopis
   if buffer[6] == "4" 
      cat ulakt_vrakta_sifra "72"
-  #37 éalba
+  #37 ≈Ωalba
   if buffer[6] == "13" 
      cat ulakt_vrakta_sifra "37"
   #msg emsg "ulakt_vrakta_sifra :ulakt_vrakta_sifra/:buffer[6]/"
@@ -765,7 +765,7 @@ sql select id, flid from obvupl \
 }
 else 
 {
-    msg emsg "GREäKA: OIB obveznika ne postoji u bazi"
+    msg emsg "GRE≈†KA: OIB obveznika ne postoji u bazi"
     return -1
 }
 #msg emsg "%Nobv :priorpb_pospar_sif/:priorpb_obvupl_id,:priorpb_obvupl_flid, :buffer[11]"
@@ -782,7 +782,7 @@ sql select o.id, o.flid,o.idenos_jmbg,o.inoos_id, o.inoos_flid   \
     and ( dposig >= ":priorpb_datnas" or dposig is null )
 dbms alias 
 
-#PAZI ako osoba nije zaposlenik, moramo naÊi osiguranika po drugim kriterijima
+#PAZI ako osoba nije zaposlenik, moramo naƒái osiguranika po drugim kriterijima
 if priorpb_osig_id == "" ||  priorpb_osig_flid == ""
 {
 cat ozgres_id "1"
@@ -806,12 +806,12 @@ dbms alias priorpb_osig_id, priorpb_osig_flid, priorpb_idenos_jmbg,  \
                          and ( dposig >= ":priorpb_datnas" or dposig is null )) 
 
 dbms alias 
-#msg emsg "%TU SAM - traûim osig  :priorpb_osig_id, :priorpb_osig_flid"
-# i dalje nisam naöla osiguranika
+#msg emsg "%TU SAM - tra≈æim osig  :priorpb_osig_id, :priorpb_osig_flid"
+# i dalje nisam na≈°la osiguranika
   if priorpb_osig_id == "" ||  priorpb_osig_flid == ""
   {
-   #smisli joö tu neöto
-    msg emsg "GREäKA: Osoba nema osiguranje na dan ozljede!"
+   #smisli jo≈° tu ne≈°to
+    msg emsg "GRE≈†KA: Osoba nema osiguranje na dan ozljede!"
     return -1
   }
 }
@@ -965,8 +965,8 @@ jpl insertOzAdr
 return
 
 proc insertTextOZ
-#1-radni okoliö, 2-radni proces, 3-spec.akt.u vrijeme ozlj.,
-#4-poremeÊaj u rad.procesu, 5- kontakt-naËin ozljeivanja
+#1-radni okoli≈°, 2-radni proces, 3-spec.akt.u vrijeme ozlj.,
+#4-poremeƒáaj u rad.procesu, 5- kontakt-naƒçin ozljeƒëivanja
 if buffer[3] == "1" 
    jpl insertRadOkoT
 else if buffer[3] == "2" 
@@ -1009,22 +1009,22 @@ cat ozljeda_kucbr        ":buffer[32]"
 if buffer[34] != "HRV" && buffer[34] != "" 
    cat ozljeda_ulicaoz       ":buffer[35]"
 cat ozljeda_tezina       ":buffer[36]"
-#Predvi.kor.zaöt.sred.
+#Predviƒë.kor.za≈°t.sred.
 cat ozljeda_zastita3     ":buffer[42]"
-#Koriöt.zaöt.sredstva
+#Kori≈°t.za≈°t.sredstva
 cat ozljeda_zastita2     ":buffer[43]"
 #Radnik osposob.za sigur.rad
 cat ozljeda_radsig       ":buffer[44]"
-#Prim.osn.pravila zaö.na radu
+#Prim.osn.pravila za≈°.na radu
 cat ozljeda_znro         ":buffer[45]"
-#Prim.pos.pravila zaö.na radu
+#Prim.pos.pravila za≈°.na radu
 cat ozljeda_znrp         ":buffer[46]"
-#pruûena prva pomoÊ
+#pru≈æena prva pomoƒá
 cat ozljeda_prvapom      ":buffer[47]"
 #Provedena istraga
 cat ozljeda_istraga      ":buffer[48]"
 cat ozljeda_istrtko      ":buffer[49]"
-#OËevid od strane policije
+#Oƒçevid od strane policije
 cat ozljeda_policija     ":buffer[50]"
 #Nadzor od strane inspektora rada
 cat ozljeda_obav         ":buffer[51]"
@@ -1106,7 +1106,7 @@ cat ozosoba_vrrad        ":buffer[22]"
 cat ozosoba_radvr        ":buffer[23]"
 cat ozosoba_period       ""  
 cat ozosoba_sati         ":buffer[26]"
-#0-nepoznato,1-redovitog,2-produûenog,3-izvanrednog
+#0-nepoznato,1-redovitog,2-produ≈æenog,3-izvanrednog
 cat ozosoba_vrsta        ":buffer[40]"
 cat ozosoba_spol         ":buffer[16]"
 cat ozosoba_drzav        ":buffer[19]"
@@ -1141,7 +1141,7 @@ else
    cat nazNaselja
 if nazNaselja != ""
    cat nazNaselja Hptbr " " nazPosta ", " nazNaselja ", "
-#Ime, prezime, adresa doktora koji je prvi pregledao ozlijeenu osobu
+#Ime, prezime, adresa doktora koji je prvi pregledao ozlijeƒëenu osobu
 if buffer[74] != ""
 {
    dbms alias PrviDr, MatPrviDr
@@ -1187,7 +1187,7 @@ return
 
 proc insertOzKon
 #kontakti vezani za ozljedu na radu
-#Z-ozlijeeni zaposlenik,R-rukovoditelj,O-oËevidac,P-popunio tiskanicu
+#Z-ozlijeƒëeni zaposlenik,R-rukovoditelj,O-oƒçevidac,P-popunio tiskanicu
 
 cat ozkon_id          "0"
 
@@ -1296,7 +1296,7 @@ cat orpbdij_lokhzzo_siflok  priorpb_lokhzzo_siflok
 return
 
 proc insertOzAdr
-#adresa ozlijeene osobe
+#adresa ozlijeƒëene osobe
 
 cat ozadr_id          "0"
 cat ozadr_ulica       ":buffer[14]"
@@ -1316,13 +1316,13 @@ return
 
 
 proc vratiUruPrvi
-# ako je sve uspjeöno proölo, formiram unl koji se vraÊa
+# ako je sve uspje≈°no pro≈°lo, formiram unl koji se vraƒáa
 cat slucaj priorpb_goddok priorpb_evbrdok
 call File_open "fileUru.txt" 'a'
 call File_write "fileUru.txt" ':priorpb_ebroj|' 1
-#jedinstveni identifikator dokumenta za koji se traûi ur.br.
+#jedinstveni identifikator dokumenta za koji se tra≈æi ur.br.
 #kod prijave je to id e-ozljede
-#kako sprijeËiti da se dvaput isto urudûbira
+#kako sprijeƒçiti da se dvaput isto urud≈æbira
 call File_write "fileUru.txt" ':identifikator|' 1
 call File_write "fileUru.txt" ':priorpb_obvupl_flid|' 1
 call File_write "fileUru.txt" ':priorpb_obvupl_id|' 1
@@ -1331,7 +1331,7 @@ call File_write "fileUru.txt" ':slucaj|' 1
 call File_write "fileUru.txt" ':ozvrdat_id|' 1
 call File_write "fileUru.txt" ':priorpb_predmet_klozna|' 1
 call File_write "fileUru.txt" ':priorpb_ulakt_urubro|' 1
-#oznaka greöke
+#oznaka gre≈°ke
 call File_write "fileUru.txt" ':ozgres_id|' 
 call File_close "fileUru.txt"
 
