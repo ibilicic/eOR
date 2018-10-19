@@ -1,0 +1,1506 @@
+#eOZLJEDA.jpl
+
+vars OrigOZ brPolja GresOZ
+
+#msg emsg "%N TU SAM NA POÈETKU"
+vars gr_msg, gr_code1 gr_code2 Urudz rbrDij 
+
+vars kojakl godo priorpb_brpred brkom(2) urubroj redbro
+vars klasa klasa1 brpred(5) uru uru1 rbrupr(6)  Ime NazPos
+vars slucaj
+vars identifikator
+vars nazNaselja nazPosta Hptbr
+vars Popunio
+vars PrviDr, MatPrviDr
+
+vars OZid
+vars OZdatzap, OZklasa, OZlokhzzo, OZuru
+
+vars ukOR ukORv
+
+proc Inicijalizacija
+# prva procedura koja se poziva iz sjamloada (report). 
+# VAŽNO: Ako iz ove procedure izaðemo sa -1 izaæi æemo i iz sjamloada i to uz
+# "ABNORMAL TERMINATION". U sluèaju da izaðemo sa obiènim returnom tada æemo uæi
+# u slijedeæu proceduru u sjamloadu, a to je proc UlazOZ. 
+
+msg emsg "Datoteku obraðujemo programom: eOZLJEDA v.1.0" 
+msg emsg ""
+msg emsg ""
+
+retvar ret
+
+#ne znam da li mi treba
+#****
+# Otvaramo file i èitamo datum zaprimanja  
+#promjeni ime file-a kad doðe do tog
+#call File_open "datumOZ.txt" 'r'
+#if ret != 0
+#{
+#  msg emsg "Ne mogu otvoriti datoteku <datumOZ.txt>."
+#  msg emsg "1. Možda je File system prepunjen?"
+#  msg emsg "2. Kakvi su permission za datoteku?" 
+#  return -1 
+#}
+
+#call File_read "datumOZ.txt" Tmp_date
+#call File_close "datumOZ.txt" 
+#
+#cat datum_Zapr Tmp_date     
+#****
+#za sad fiksno
+#ovisno o nazivu datoteke pozivamo samo odreðeni dio
+#smisli kako prenijet parametar iz ksh skripte u ovaj jpl
+call File_open 'eOZ.txt' 'r'
+call File_read 'eOZ.txt' 'Buffer3'
+#msg emsg "%N Buffer3-1 :Buffer3(1,2)/"
+#msg emsg "%N Buffer3-2 :Buffer3(4,2)/"
+#msg emsg "%N Buffer3cijeli :Buffer3/"
+cat OrigOZ "podaciOZ" ":Buffer3(1,2)" ".txt"
+
+#msg emsg "%N OrigOZ /:OrigOZ/"
+call File_close "eOZ.txt"
+system rm eOZ.txt
+
+call File_open ":OrigOZ" 'r'
+if ret != 0
+{
+  msg emsg "Ne mogu otvoriti datoteku <:OrigOZ>."
+  msg emsg "1. Možda je File system prepunjen?"
+  msg emsg "2. Kakvi su permission za datoteku?" 
+  return -1 
+}
+
+
+return
+
+proc UlazOZ
+# ulazna toèka u program (poziv iz init sekvence putem sjamload-a)
+# VAŽNO: Ova proc uz proc Inicijalizacija su i izlazne procedure iz sjamload -
+# Iz proc Inicijalizacija izlazi se VAN sa return -1, iz ove procedure 
+# izlazi sa bilo kakvim return -om. ALI  return-1 æe napraviti
+# "ABNORMAL TERMINATION# dok return neæe! A taj je podatak važan ksh skripti 
+# koja gleda na kakav je naèin sjamload završio 
+
+#prije poèetka postavljamo redni br. dijagnoze na 1
+math%.0 rbrDij = 0
+cat GresOZ "0"
+
+retvar ret  
+while 1==1
+{
+  # S ove 3 linije èitamo red podataka iz datoteke i isti dijelimo u varijablu 
+  # buffer koja je polje. Svaki èlan polja dobiva podatak omeðen sa dvotoèkom. 
+  # Izlaz iz funkcije File_parse je broj èlanova polja!!! 
+  call sm_n_clear_array("buffer")
+  call File_parse :OrigOZ "buffer" "||"
+
+  cat brPolja ret 
+#    msg emsg "buffer1 :buffer[1]  "
+   
+  # uvjet izlaza iz while petlje (kroz ksh skriptu smo izbacili prazne redove!)
+#doradi IB
+  if brPolja <= 0 
+  {
+    msg emsg "Datoteka :OrigOZ  proèitana"
+    break
+  } 
+##  # brojaè slogova - znamo o kojem se redu datoteke radi, a i gdje je puklo 
+##  math %.0 ukSlog = ukSlog +1
+  
+##  # Poruka na ekranu o napredovanju      
+##  math %.0 tmpPosto = (ukSlog/BrojSlogovaWC) * 100
+##  if tmpPosto != Posto
+##  {
+##    cat Posto tmpPosto
+##    msg emsg "Datoteka: :ImeDatoteke =>Obraðeno :Posto % -> (:ukSlog redova)" 
+##  }
+
+##  # Slijedeæi if služi u sluèaju da je datoteka pukla. Dio koda za provjeru i
+##  # upis podataka se preskaèe sve dok se ne doðe do reda zadnjeg uèitanog, ali
+##  # NE i commitiranog(rollbackanog) raèuna. Taj raèun ponavljamo!
+  
+##  if ukSlog >= StartRed 
+##  {
+##    if ImeDatoteke == "" && ukSlog >=0
+##    { 
+##      msg emsg "Namjerno producirana pogreška" 
+##      msg emsg "GREŠKA: Izlaz uslijed greške" 
+##      return -1
+##    }
+#msg emsg "%NOrigOZ :OrigOZ(1,2)"
+#ovisno o vrsti datoteke izvršavam odreðeni dio koda
+cat ozgres_id ""
+dbms BEGIN
+##if OrigOZ(1,2) == "P_"
+#08052017 dodano da kad doðe P_AAAAAAAAAAA_BB_CCCCC.txt gdje nije BB 01, da
+#ne izbacujem da veæ postoji nego radim update na dijagnoze i doktorski dio
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
+{
+#provjera da li veæ prijava za taj ebroj postoji
+#naknadno ugradi uvijet za storno ako bude trebalo
+
+	vars p_id
+	dbms alias p_id
+	sql select id from priorpb \
+		where ebroj = ":buffer[2]"
+	dbms alias 
+#	msg emsg "TU SAM :p_id"
+#problem...jer ne ode dalje na slogove stavki pa to pitam samo kod vodeæeg sloga
+	if p_id != "" && buffer[1] == "1"
+	{
+       msg emsg "Veæ postoji slog prijave :p_id sa ebrojem :buffer[2]!"
+	   cat GresOZ "1"
+	   jpl GreskaOzljeda (":buffer[2]","Veæ postoji slog prijave :p_id sa ebrojem :buffer[2]!")
+       return 
+	}
+    # Sada gledamo koja je vrsta sloga (Vodeæi slog ili stavka )
+    if buffer[1] == "1"  
+    {  
+	  # VODEÆI SLOG 
+		math%.0 ukOR =ukOR + 1
+		jpl urudzbirajOZ
+        if ret == -1 
+        {
+          msg emsg "Datoteka: :OrigOZ za e_broj :buffer[2]"
+          msg emsg "Program je pao u proceduri <urudzbiraj>!"
+          msg emsg "DB Stanje greške: :@dmengerrcode/:@dmretcode"
+          msg emsg "Opis: :@dmengerrmsg"
+          msg emsg "GREŠKA: Izlaz uslijed greške" 
+          return -1
+        }
+        msg emsg "Urudz :Urudz"
+        if Urudz == "TRUE" 
+           jpl insIntKnjiOZ
+		#msg emsg "$Nret nakon IntKnj :ret"
+        if ret == -1 
+        {
+          msg emsg "Datoteka: :OrigOZ za e_broj :buffer[2]"
+          msg emsg "Program je pao u proceduri <insIntKnjiOZ>!"
+          msg emsg "DB Stanje greške: :@dmengerrcode/:@dmretcode"
+          msg emsg "Opis: :@dmengerrmsg"
+          msg emsg "GREŠKA: Izlaz uslijed greške" 
+          return -1
+        }
+
+		jpl insertPrijaveOZ
+		# kad uspijem insertirati Prijavu, naðem id za ostale tablice
+		dbms alias OZid
+		sql select id from priorpb \
+			where ebroj = ":buffer[2]"
+		dbms alias 
+
+		msg emsg "%NNakon insertPrijaveOZ OZid :OZid"
+		if OZid != ""
+           jpl insertOstaloOZ
+	#tu staviti da se formira izlazni txt sa ur.brojem
+    #kako sprijeèiti da se dvaput isto urudžbira - premjestila ovdje
+        jpl vratiUruPrvi
+    }
+    else if buffer[1] == "2"  && OZid != ""
+    {  
+	  # SLOG STAVAKA - DIJAGNOZA
+		#msg emsg "%Nprije rbrDij :rbrDij"
+		math%.0 rbrDij =rbrDij + 1
+		#msg emsg "%Nposlije rbrDij :rbrDij"
+		jpl insertDijag
+		#msg emsg "%Nposlije inserta rbrDij :rbrDij"
+    }
+    else if buffer[1] == "3"  && OZid != "" 
+    {  
+	  # SLOG STAVAKA - TEKST PODACI
+        jpl insertTextOZ
+    }
+	else if OZid == "" 
+    {  
+			msg emsg "Nije uspio upis u Prijavu ozljede na radu!"
+			return -1
+    }
+	else
+    {  
+			msg emsg "GREŠKA Pogrešna oznaka sloga za OZid :OZid!"
+			return -1
+    } 
+
+	#tu staviti da se formira izlazni txt sa ur.brojem
+    #kako sprijeèiti da se dvaput isto urudžbira - premjestila gore
+#    jpl vratiUruPrvi
+}
+#   msg emsg "%NTU SAM prije 02 Buffer3 /:Buffer3(1,2)/:Buffer3(4,2)/"
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
+{
+   # naðem id za brži update
+   if buffer[1] == "1"  
+   {
+   #msg emsg "%NTU SAM1,buffer[2]/:buffer[2]/"
+   dbms alias OZid, priorpb_datzap, priorpb_predmet_klozna,\
+   priorpb_predmet_flid, priorpb_ulakt_urubro,priorpb_lokhzzo_siflok, \
+   priorpb_goddok, priorpb_evbrdok,priorpb_obvupl_flid, \
+   priorpb_obvupl_id, priorpb_datnas
+   sql select id, datzap, predmet_klozna, lokhzzo_siflok, ulakt_urubro,  \
+   lokhzzo_siflok, goddok,evbrdok, obvupl_flid, obvupl_id, datnas \
+   from priorpb where ebroj = :buffer[2]
+   msg emsg "%Npriorpb_ulakt_urubro,OZid /:priorpb_ulakt_urubro/:OZid/"
+   dbms alias 
+   jpl delDijag
+   jpl insUlAktOZ
+   }
+    if buffer[1] == "2" 
+    {  
+       # SLOG STAVAKA - DIJAGNOZA
+         msg emsg "%NTU SAM2"
+		math%.0 rbrDij =rbrDij + 1
+         jpl insertDijag
+          cat priorpb_ebroj buffer[2]
+          cat identifikator buffer[2]
+          cat slucaj priorpb_goddok priorpb_evbrdok
+          cat priorpb_predmet_klozna predmet_klozna
+          cat priorpb_ulakt_urubro   ulakt_urubro
+      jpl vratiUruPrvi
+     }
+}
+#if OrigOZ(1,2) == "V_"
+if Buffer3(1,2) == "_V"
+{
+    # Sada gledamo koja je vrsta sloga (Vodeæi slog ili stavka )
+	#msg emsg "%NÈitam datoteku V_ buffer1 /:buffer[1]/"
+		# naðem id za brži update
+
+		dbms alias OZid, datzap, predmet_klozna, predmet_flid, ulakt_urubro, \
+		 priorpb_goddok, priorpb_evbrdok,priorpb_obvupl_flid, \
+		 priorpb_obvupl_id, priorpb_datnas
+		sql select id, datzap, predmet_klozna, lokhzzo_siflok, ulakt_urubro,  \
+		    goddok,evbrdok, obvupl_flid, obvupl_id, datnas \
+		from priorpb \
+			where ebroj = ":buffer[2]"
+		dbms alias 
+    if buffer[1] == "1" 
+    {  
+	  # VODEÆI SLOG 
+		math%.0 ukORv =ukORv + 1
+
+    	jpl updateOz
+        cat ozvrdat_id buffer[6]
+  #msg emsg"%Nozvrdat_id buffer[6] buffer[1] :ozvrdat_id :buffer[6] :buffer[1]"
+    }
+    else if buffer[1] == "2" 
+    {  
+	  # SLOG STAVAKA - DIJAGNOZA
+		jpl updDijag
+    
+	  #vidi da li bi to bilo bolje staviti za slog pod rbr 1
+      jpl insUlAktOZ
+          cat priorpb_ebroj buffer[2]
+          cat identifikator buffer[2]
+      cat slucaj priorpb_goddok priorpb_evbrdok
+          cat priorpb_predmet_klozna predmet_klozna
+          cat priorpb_ulakt_urubro   ulakt_urubro
+      jpl vratiUruPrvi
+     }
+}
+#	msg emsg "TU SAM prije Z_ Buffer3 je ok :OrigOZ/:Buffer3/"
+#if OrigOZ(1,2) == "Z_"
+if Buffer3(1,2) == "_Z"
+{
+#	msg emsg "Zakaj nisam u Z_ :OrigOZ/:Buffer3"
+    # Datoteka - zahtjev za urudžbenim brojem za sve vrste akcija
+		dbms alias priorpb_id, priorpb_obvupl_flid, priorpb_obvupl_id, \
+		priorpb_goddok, priorpb_evbrdok, datzap, \
+		predmet_klozna,  predmet_flid, ulakt_urubro
+		sql select id, obvupl_flid, obvupl_id, goddok, evbrdok,  \
+			datzap, predmet_klozna,  predmet_flid , ulakt_urubro \
+		from priorpb \
+			where ebroj = ":buffer[1]"
+		dbms alias 
+#	msg emsg "TU SAM na Z_/priorpb_id :priorpb_id"
+    	if priorpb_id == ""
+    	{
+           msg emsg "Ne postoji slog prijave sa ebrojem :buffer[1]!"
+	       cat GresOZ "1"
+	       jpl GreskaOzljeda (":buffer[1]","Ne postoji slog prijave sa ebrojem :buffer[1]!")
+           return 
+	    }
+      jpl insUlAktOZ
+	  cat priorpb_ebroj buffer[1]
+	  cat identifikator buffer[2]
+      cat slucaj priorpb_goddok priorpb_evbrdok
+	  cat ozvrdat_id buffer[6]
+	  cat priorpb_predmet_klozna predmet_klozna
+	  cat priorpb_ulakt_urubro   ulakt_urubro
+      jpl vratiUruPrvi
+}
+#kraj od while 1 == 1
+
+if GresOZ == "1"
+	dbms rollback
+else
+	dbms commit
+}
+return
+
+proc urudzbirajOZ
+
+vars ret
+retvar ret
+
+jpl insPredmetOZ
+if ret < 0
+   return -1
+else 
+{
+   vars ret
+   retvar ret
+   jpl insUlAktOZ
+   if ret < 0
+      return -1
+}
+return
+
+proc insPredmetOZ
+   cat kojakl "502-03-02" 
+#buffer[3] podruèna služba
+#buffer[82] datum popunjavanja tiskanice od strane poslodavca
+   cat godo ":curr_date"
+   dbms alias priorpb_brpred 
+   sql select max(brpred) from predmet where flid = ":buffer[3]" \
+   and godotv=":godo(7,4)" and kladok_klasa=":kojakl" and posozn="I"
+
+#msg emsg "%N godo, kojakl, :godo, :kojakl,:priorpb_brpred"
+#kreæem s 3000
+#u EUP su brojevi veæ došli do 2200 da se ne dupla po predmetima
+   if (priorpb_brpred=='' ) && godo(7,4) = 2017 && buffer[3] != 114
+      cat priorpb_brpred '3000'
+   else if (priorpb_brpred=='' ) && godo(7,4) = 2017 && buffer[3] == 114
+      cat priorpb_brpred '4000'
+   else if (priorpb_brpred=='' ) && godo(7,4) > 2017
+      cat priorpb_brpred '1'
+   else  
+     math%.0 priorpb_brpred = priorpb_brpred + 1
+
+   cat klasa "502-03/"godo(9,2)"-02/" 
+   cat priorpb_predmet_klozna "UP/I-" klasa priorpb_brpred
+#   msg emsg "buffer3 :buffer[3]"
+   cat priorpb_predmet_flid ":buffer[3]"                      
+
+# tražimo šifru organizacijske jedinice
+  dbms declare ur cursor for select sifuru from orgjed  \
+       where sif = :buffer[3]
+  dbms with cursor ur alias orgjed_sifuru
+  dbms with cursor ur execute
+  dbms close cursor ur
+
+ if buffer[3] == "114"  || buffer[3] == "60" || \
+    buffer[3] == "82"  || buffer[3] == "72" 
+      cat brkom "81" 
+ else
+      cat brkom "13" 
+
+  cat uru  "338-"orgjed_sifuru"-"brkom"-"godo(9,2)"-" urubroj
+  cat uru1 uru(1,9)
+
+# kojem odjelu ide 
+  dbms alias ulakt_mjnas_id_na
+  sql select id from mjnas where brozna = ":uru(1,9)" and dpresp is null
+
+#****************
+#DORADI
+#promjeni buffer-e prema potrebi
+#doradi dijelove koji su razlièito ovisno o vrsti unl datoteke 
+#uglavnom je to insert u ulakt
+#****************
+cat priorpb_ebroj        buffer[2]
+
+cat predmet_klozna "UP/I-" klasa priorpb_brpred
+cat predmet_flid         buffer[3]
+cat predmet_godotv       godo(7,4)
+cat predmet_brpred       priorpb_brpred
+cat predmet_posozn       "I"   
+#msg emsg "%Nbuffer11 :buffer[11]/ ulakt_mjnas_id_na :ulakt_mjnas_id_na"
+dbms alias Ime
+sql select trim(ime) || " " || trim(prezime) from idenos i, oibreg o\
+        where oib = ":buffer[11]" and o.idenos_jmbg = i.jmbg 
+
+cat predmet_nazpre   "PRIJAVA OR " Ime " " buffer[11] " int.e-br. " priorpb_ebroj ", dat.nastanka " buffer[4] ". lokacija " buffer[3]  
+
+cat predmet_datotv       godo
+cat predmet_kladok_klasa kojakl
+cat predmet_mjnas_id_p   ulakt_mjnas_id_na
+  sql insert into predmet      \
+    (flid, klozna, posozn, godotv, brpred, nazpre, datotv, \
+      kladok_klasa, mjnas_id_p )   \
+    values   \
+      ( ":predmet_flid",  ":predmet_klozna",  \
+      ":predmet_posozn", ":predmet_godotv",    \
+      ":predmet_brpred", ":predmet_nazpre", ":predmet_datotv", \
+      ":predmet_kladok_klasa", ":predmet_mjnas_id_p"   )
+  
+  cat gr_code1 @dmengerrcode
+  cat gr_code2 @dmretcode
+  cat gr_msg   ":@dmengerrmsg ~ :@dmretmsg"
+ 
+  dbms onerror jpl handleError
+  if (gr_code1 != 0 || gr_code2 != 0)
+  {
+#    jpl upisi_Poruke_Oper "Za raèun br. :buffer[4] nije uspio insert u urudžbeni <:gr_code1/:gr_code2>"
+    cat Urudz "FALSE"  
+ #   cat Pozor_Operater "TRUE"
+ ##   dbms rollback
+  }
+  else 
+  { 
+    cat Urudz "TRUE" 
+##    dbms commit                     
+  }
+  
+return
+
+proc insUlAktOZ
+#msg emsg "%Nu insUlAktOZ"
+#if OrigOZ(1,2) == "Z_"
+   cat godo ":curr_date"
+#if Buffer3(1,2) == "_Z" || Buffer3(1,2) == "_V"
+#{
+ if buffer[6] == "" &&  Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
+	cat buffer[6] "11"
+ if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
+	cat buffer[6] "19"
+if Buffer3(1,2) == "_V"
+ cat buffer[6] ozvrdat_id 
+ dbms alias ozvrdat_naziv
+ sql select naziv from ozvrdat   \
+	 where id = :buffer[6]
+ dbms alias 
+ msg emsg "%Nozvrdat_naziv,OZid  /:ozvrdat_naziv/:OZid/"
+#}
+# tražimo max urudž. broj za našu klasu
+ if  Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
+ {
+     cat predmet_flid priorpb_predmet_flid
+     cat predmet_klozna priorpb_predmet_klozna
+ }
+ dbms alias urubroj
+ sql select max(rbrupr) from ulakt        \
+    where predmet_flid = ":predmet_flid"  \
+    and predmet_klozna = ":predmet_klozna" 
+ dbms alias 
+ msg emsg "urubroj :urubroj,:predmet_flid,:predmet_klozna"
+ if urubroj == "" || urubroj =="0"
+    cat urubroj  '1'
+ else
+    math %.0 urubroj = urubroj + 1
+
+ #msg emsg " urubroj,uru :urubroj,:uru"
+#  if OrigOZ(1,2) == "P_"
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
+  {
+     cat uru  "338-"orgjed_sifuru"-"brkom"-"godo(9,2)"-" urubroj
+     cat ulakt_urubro uru
+  }
+  cat ulakt_datnas godo
+  cat ulakt_datpri godo
+  cat ulakt_nazpos NazPos
+  #cat ulakt_jmbg priorpb_idenos_jmbg
+#  if OrigOZ(1,2) == "P_"
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
+  {
+	 cat  ozvrdat_naziv "Prijava OR"
+	 cat  ozvrdat_id "1"
+	 cat identifikator priorpb_ebroj
+  }
+  cat ulakt_opiakt  ozvrdat_naziv " " Ime " int.br." priorpb_id " e-br. " buffer[1] " za dokument br." buffer[2]
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
+  {
+	 #SAM1
+	 cat identifikator priorpb_ebroj
+	 cat  ozvrdat_id "19"
+  cat ulakt_opiakt  ozvrdat_naziv " int.br." OZid " e-br. " buffer[2] " za dokument br." buffer[2]
+  }
+
+    cat ulakt_godnas godo(7,4)
+  cat ulakt_rbrupr urubroj
+# cat ulakt_brpri
+  cat ulakt_status "U"
+#  if OrigOZ(1,2) == "P_"
+if Buffer3(1,2) == "_P"
+     cat ulakt_smjer "U"
+#  if OrigOZ(1,2) == "Z_" && ((buffer[6] >= "6" && buffer[6] <= "11" ) || \
+#	 buffer[6] == "2" || buffer[6] == "4")
+  if Buffer3(1,2) == "_Z" && ((buffer[6] >= "6" && buffer[6] <= "11" ) || \
+	 buffer[6] == "2" || buffer[6] == "4")
+     cat ulakt_smjer "I"
+#  if OrigOZ(1,2) == "Z_" && (buffer[6] == "1" || buffer[6] == "3" || \
+#	 buffer[6] == "5" || buffer[6] == "12" || buffer[6] == "13")
+  if Buffer3(1,2) == "_Z" && (buffer[6] == "1" || buffer[6] == "3" || \
+	 buffer[6] == "5" || buffer[6] == "12" || buffer[6] == "13")
+     cat ulakt_smjer "U"
+if Buffer3(1,2) == "_V"
+     cat ulakt_smjer "I"
+  #msg emsg "ulakt_smjer :ulakt_smjer"
+  cat ulakt_tippos "O"
+  cat ulakt_oib buffer[11]
+#  msg emsg "ulakt_oib :ulakt_oib"
+##ako je naš djelatnik, podmetni njegove podatke
+#za sad stavim MBO... možda ipak e-ozljeda
+#  cat ulakt_usruno buffer[71]
+  cat ulakt_usruno "e-ozljeda"
+  cat ulakt_predmet_flid predmet_flid
+  cat ulakt_predmet_klozna predmet_klozna
+#  if OrigOZ(1,2) == "P_"
+#doradi 08052018
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
+  {
+  #99     383     Ostale organizacije udruženog rada
+  cat ulakt_mjnas_id "99" 
+  #30     Evidencija
+  #ipak 31 Rješenje
+  cat ulakt_vrakta_sifra "31"
+  }
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
+  {
+  #izabrani doktor
+  #141	381	Zdravstvo i socijalna zaštita
+  cat ulakt_mjnas_id "141" 
+  #08052018 vidi još
+  #65 Dokumentacija     73 Odgovor
+  cat ulakt_vrakta_sifra "65"
+  #TU SAM1
+  dbms alias ulakt_mjnas_id_na
+  sql select id from mjnas where brozna = ":priorpb_ulakt_urubro(1,9)" and dpresp is null
+  cat ulakt_predmet_flid priorpb_predmet_flid
+  cat ulakt_predmet_klozna priorpb_predmet_klozna
+  cat uru  priorpb_ulakt_urubro(1,9)"-"godo(9,2)"-" urubroj
+  cat ulakt_urubro uru
+  }
+#  if OrigOZ(1,2) == "Z_"
+if Buffer3(1,2) == "_Z" || Buffer3(1,2) == "_V"
+  {
+     cat ulakt_urubro ulakt_urubro(1,13) urubroj
+  # za veæinu 338-xx-13  Odjel za zdravstveno osiguranje, pravne i opæe pos
+  # osim za sifuru -08, -14,-17- i -21-
+  #oni (RU) imaju -81 Odsjek za zdravstveno osiguranje zaštite zdravlja
+  #iz ulakt_urubro
+  #za sva rješenja
+  #if buffer[6] == "1" || buffer[6] == "2" || buffer[6] == "4" || \
+#	 (buffer[6] >= "6" && buffer[6] <= "11")
+#  {
+  dbms alias ulakt_mjnas_id
+  sql select id from mjnas where brozna =":ulakt_urubro(1,9)" and dpresp is null
+  dbms alias 
+  cat ulakt_mjnas_id_na ulakt_mjnas_id
+  #msg emsg "TUTUulakt_mjnas_id :ulakt_mjnas_id, :ulakt_urubro(1,9)"
+#  }
+  #99     383     Ostale organizacije udruženog rada
+  if buffer[6] == "3" || buffer[6] == "13"
+     cat ulakt_mjnas_id "99" 
+  #LP
+  if buffer[6] == "5"
+  {
+  dbms alias ulakt_mjnas_id
+  sql select id from mjnas where brozna =":ulakt_urubro(1,7)" || "80"  \
+	  and dpresp is null
+  dbms alias 
+  }
+  #msg emsg "ulakt_mjnas_id :ulakt_mjnas_id"
+
+  cat ulakt_brdokp buffer[2]
+  #izabrani doktor
+  #141	381	Zdravstvo i socijalna zaštita
+  if buffer[6] == "12"
+     cat ulakt_mjnas_id "141" 
+
+  #21 Mišljenje
+  if buffer[6] == "5" 
+     cat ulakt_vrakta_sifra "21"
+  #31 Rješenje
+  if buffer[6] >= 6 && buffer[6] <= 11 
+     cat ulakt_vrakta_sifra "31"
+  #32 Zahtjev
+  if buffer[6] == "2" 
+     cat ulakt_vrakta_sifra "32"
+  #65 Dokumentacija
+  if buffer[6] == "3" || buffer[6] == "12" 
+     cat ulakt_vrakta_sifra "65"
+  #72 Dopis
+  if buffer[6] == "4" 
+     cat ulakt_vrakta_sifra "72"
+  #37 Žalba
+  if buffer[6] == "13" 
+     cat ulakt_vrakta_sifra "37"
+  #msg emsg "ulakt_vrakta_sifra :ulakt_vrakta_sifra/:buffer[6]/"
+  }
+#  msg emsg "ulakt_urubro :ulakt_urubro"
+#msg emsg ":ulakt_urubro,:ulakt_datnas,:ulakt_datpri,:ulakt_opiakt,:ulakt_godnas"
+# msg emsg "PRIJE INSERT-a :ulakt_rbrupr, :ulakt_status, :ulakt_smjer, :ulakt_usruno, \
+# :ulakt_tippos, :ulakt_oib,  :ulakt_predmet_flid,:ulakt_predmet_klozna, \
+#      :ulakt_mjnas_id, :ulakt_mjnas_id_na, :ulakt_vrakta_sifra"     
+  sql insert into ulakt      \
+    (urubro, brdokp,  datnas, datpri, opiakt, godnas, rbrupr, status, smjer,   \
+      usruno, tippos, oib,  predmet_flid,  \
+      predmet_klozna, mjnas_id, mjnas_id_na,  vrakta_sifra )   \
+    values   \
+      ( ":ulakt_urubro", ":ulakt_brdokp", ":ulakt_datnas",  \
+      ":ulakt_datpri", ":ulakt_opiakt", ":ulakt_godnas",    \
+      ":ulakt_rbrupr", ":ulakt_status", ":ulakt_smjer",     \
+      ":ulakt_usruno", ":ulakt_tippos", ":ulakt_oib",  \ 
+          ":ulakt_predmet_flid",":ulakt_predmet_klozna", \
+      ":ulakt_mjnas_id", ":ulakt_mjnas_id_na", ":ulakt_vrakta_sifra" )    
+  
+  cat gr_code1 @dmengerrcode
+  cat gr_code2 @dmretcode
+  cat gr_msg   ":@dmengerrmsg ~ :@dmretmsg"
+ 
+  dbms onerror jpl handleError
+  
+  if (gr_code1 != 0 || gr_code2 != 0)
+  {
+    cat Urudz "FALSE"  
+#    dbms rollback
+  }
+  else 
+  { 
+    cat Urudz "TRUE" 
+#    dbms commit                     
+  }
+return
+
+
+proc insIntKnjiOZ
+
+#msg emsg "%Nintknji_predmet_flid :predmet_flid/:ulakt_mjnas_id_na/:priorpb_datzap"
+ dbms alias redbro
+  sql select max(redbro) from intknji where predmet_flid=":predmet_flid"\
+      and godknj = ":curr_date(7,4)"  and mjnas_id = :ulakt_mjnas_id_na
+ dbms alias 
+
+   if redbro == "" 
+      cat redbro "1"
+   else
+      math %.0 redbro = redbro + 1
+#msg emsg "%Nintknji_redbro :redbro"
+  cat intknji_redbro redbro
+  cat intknji_godknj ulakt_godnas
+  cat intknji_datuno ulakt_datpri
+  cat intknji_usruno ulakt_usruno
+  cat intknji_datpre ulakt_datpri
+  cat intknji_datvra
+  cat intknji_primje  
+  cat intknji_ulakt_urubro ulakt_urubro
+  cat intknji_predmet_flid predmet_flid
+  cat intknji_predmet_klozna predmet_klozna
+  cat intknji_djel1_matbr_p 
+  cat intknji_djel1_matbr_v 
+  cat intknji_mjnas_id ulakt_mjnas_id_na
+  sql insert into intknji      \
+    (redbro, godknj, datuno, usruno, datpre, datvra, primje, ulakt_urubro , \
+     predmet_flid, predmet_klozna, djel1_matbr_p, djel1_matbr_v, mjnas_id ) \
+    values   \
+    (":intknji_redbro", ":intknji_godknj", ":intknji_datuno",  \
+     ":intknji_usruno", ":intknji_datpre", ":intknji_datvra",  \
+    ":intknji_primje", ":intknji_ulakt_urubro" , ":intknji_predmet_flid" , \
+    ":intknji_predmet_klozna" , ":intknji_djel1_matbr_p" , \
+    ":intknji_djel1_matbr_v" ,  ":intknji_mjnas_id") 
+  cat gr_code1 @dmengerrcode
+  cat gr_code2 @dmretcode
+  cat gr_msg   ":@dmengerrmsg ~ :@dmretmsg"
+ 
+  dbms onerror jpl handleError
+  
+  if (gr_code1 != 0 || gr_code2 != 0)
+  {
+    cat Urudz "FALSE"  
+#    dbms rollback
+  }
+  else 
+  { 
+    cat Urudz "TRUE" 
+#    dbms commit                     
+  }
+#msg emsg "%Nintknji kraj :intknji_predmet_klozna"
+return
+
+proc insertPrijaveOZ
+
+jpl brSlucajaOZ
+
+cat priorpb_datnas ":buffer[4]"
+cat priorpb_datzap ":curr_date"
+cat priorpb_datprij ":buffer[5]"
+cat priorpb_userid "e-ozljeda"
+cat priorpb_vrtis  "1"
+cat priorpb_email ":buffer[7]"   
+cat priorpb_ebroj ":buffer[2]"
+#msg emsg "%Ndatnas :priorpb_datnas/ :+buffer[4]"
+#msg emsg "buff6 oib :buffer[6]"
+
+dbms alias priorpb_pospar_sif, priorpb_idenos_jmbg_ide              
+sql select pospar_sif, idenos_jmbg from oibreg \
+    where oib = ":buffer[6]" and (datdo is null or datdo >= ":buffer[4]")
+
+#msg emsg "sif, idenos_jmbg_ide,:priorpb_pospar_sif, :priorpb_idenos_jmbg_ide"
+
+  dbms alias NazPos
+  if priorpb_pospar_sif != ""
+     sql select trim(tvrtka) from pospar p \
+         where p.sif = ":priorpb_pospar_sif" 
+  if priorpb_idenos_jmbg_ide != ""
+     sql select  trim(ime) || " " || trim(prezime) from idenos i \ 
+     where i.jmbg=":priorpb_idenos_jmbg_ide" 
+  dbms alias 
+
+if priorpb_pospar_sif != ""
+{
+dbms alias priorpb_obvupl_id , priorpb_obvupl_flid               
+sql select id, flid from obvupl \
+    where pospar_sif = ":priorpb_pospar_sif"  \
+    and vrobup_id  in (  75, 82, 84) \
+    and (dpsobv is null or dpsobv >= ":priorpb_datprij")
+}
+else if priorpb_idenos_jmbg_ide != ""
+{
+dbms alias priorpb_obvupl_id , priorpb_obvupl_flid               
+sql select id, flid from obvupl \
+    where idenos_jmbg_ide = ":priorpb_idenos_jmbg_ide"  \
+    and vrobup_id  =  82 \
+    and (dpsobv is null or dpsobv >= ":priorpb_datprij")
+}
+else 
+{
+    msg emsg "GREŠKA: OIB obveznika ne postoji u bazi"
+    return -1
+}
+#msg emsg "%Nobv :priorpb_pospar_sif/:priorpb_obvupl_id,:priorpb_obvupl_flid, :buffer[11]"
+dbms alias priorpb_osig_id, priorpb_osig_flid, priorpb_idenos_jmbg,  \
+     priorpb_inoos_id, priorpb_inoos_flid
+sql select o.id, o.flid,o.idenos_jmbg,o.inoos_id, o.inoos_flid   \
+    from osig o, oibreg oo \
+    where  oo.oib =  ":buffer[11]"  \
+    and oo.idenos_jmbg = o.idenos_jmbg \
+    and o.obvupl_id_o = :priorpb_obvupl_id  \ 
+    and o.obvupl_flid_o = ":priorpb_obvupl_flid"  \ 
+    and rstat != 'R' \
+    and dssosig <= ":priorpb_datnas" \
+    and ( dposig >= ":priorpb_datnas" or dposig is null )
+dbms alias 
+
+#PAZI ako osoba nije zaposlenik, moramo naæi osiguranika po drugim kriterijima
+if priorpb_osig_id == "" ||  priorpb_osig_flid == ""
+{
+cat ozgres_id "1"
+dbms alias priorpb_osig_id, priorpb_osig_flid, priorpb_idenos_jmbg,  \
+	 priorpb_inoos_id, priorpb_inoos_flid
+	 sql select o.id, o.flid,o.idenos_jmbg,o.inoos_id, o.inoos_flid   \
+		 from osig o, oibreg oo, uvjosn u \
+			 where  oo.oib =  ":buffer[11]"  \
+			 and oo.idenos_jmbg = o.idenos_jmbg \
+             and o.rstat != 'R' and u.osnos_sifra = o.osnos_sifra \
+			 and u.iskgen = "DA" \
+             and dssosig <= ":priorpb_datnas" \
+             and ( dposig >= ":priorpb_datnas" or dposig is null ) \
+			 and id = ( SELECT max(o.id) \
+		                from osig o, oibreg oo, uvjosn u \
+               			 where  oo.oib =  ":buffer[11]"  \
+               			 and oo.idenos_jmbg = o.idenos_jmbg \
+                         and o.rstat != 'R' and u.osnos_sifra = o.osnos_sifra \
+		               	 and u.iskgen = "DA"  \
+                         and dssosig <= ":priorpb_datnas" \
+                         and ( dposig >= ":priorpb_datnas" or dposig is null )) 
+
+dbms alias 
+#msg emsg "%TU SAM - tražim osig  :priorpb_osig_id, :priorpb_osig_flid"
+# i dalje nisam našla osiguranika
+  if priorpb_osig_id == "" ||  priorpb_osig_flid == ""
+  {
+   #smisli još tu nešto
+    msg emsg "GREŠKA: Osoba nema osiguranje na dan ozljede!"
+    return -1
+  }
+}
+
+#msg emsg "%Npriorpb_inoos_id, priorpb_inoos_flid, :priorpb_inoos_id, :priorpb_inoos_flid, :priorpb_osig_id, :priorpb_osig_flid"
+     cat priorpb_inoos_id "1" 
+	 cat priorpb_inoos_flid "1"
+cat priorpb_zdrdje_id ":buffer[72]"
+if priorpb_zdrdje_id != ""
+{
+dbms alias priorpb_davzu_sif
+sql select u.davzu_sif from ugprim u \
+    where u.zdrdje_id = :priorpb_zdrdje_id \
+    and (u.datdo is null or u.datdo >= ":curr_date")
+}
+#cat priorpb_davzu_sif ":buffer[80]"
+#za test
+cat priorpb_lokhzzo_siflok ":buffer[3]"
+cat priorpb_djelnkd_id ":buffer[8]"
+cat priorpb_brzap_id ":buffer[9]"
+cat priorpb_zdrdje_id_s  ":buffer[10]"
+if  priorpb_zdrdje_id_s  == "null" 
+    cat priorpb_zdrdje_id_s 
+if priorpb_zdrdje_id_s  != "" && priorpb_zdrdje_id_s  != " " 
+{
+dbms alias priorpb_smrposl_id_s, priorpb_obvupl_flid_s, priorpb_obvupl_id_s, \
+           priorpb_pospar_sif_s, priorpb_idenos_jmbg_ide_s  
+ sql select id,obvupl_flid,obvupl_id,pospar_sif,idenos_jmbg_ide   \
+           from smrposl  where zdrdje_id = :priorpb_zdrdje_id_s   \
+           and (datdo is null or datdo >= ":priorpb_datzap")
+
+     if priorpb_zdrdje_id_s  == "" 
+     {
+        cat priorpb_zdrdje_id_s 
+        cat priorpb_smrposl_id_s 
+        cat priorpb_obvupl_flid_s 
+        cat priorpb_obvupl_id_s
+        cat priorpb_pospar_sif_s 
+        cat priorpb_idenos_jmbg_ide_s
+     }
+}
+
+cat priorpb_ulakt_urubro ulakt_urubro
+
+#msg emsg '0,:curr_date,:priorpb_datnas , :priorpb_datzap, :priorpb_datprij,' 
+#msg emsg ' :priorpb_userid, :priorpb_evbrdok, :priorpb_goddok,  '
+#msg emsg ' :priorpb_email, :priorpb_ebroj, :priorpb_osig_id,  '
+#msg emsg ':priorpb_osig_flid, :priorpb_idenos_jmbg, :priorpb_inoos_id,   '
+#msg emsg ':priorpb_inoos_flid, '
+#msg emsg ':priorpb_obvupl_flid, :priorpb_obvupl_id, :priorpb_pospar_sif, '
+#msg emsg ':priorpb_idenos_jmbg_ide, '
+#msg emsg ':priorpb_zdrdje_id, :priorpb_davzu_sif, 4, :priorpb_lokhzzo_siflok, '
+#msg emsg ':priorpb_djelnkd_id, :priorpb_brzap_id, '
+#msg emsg ':priorpb_zdrdje_id_s,:priorpb_smrposl_id_s,:priorpb_obvupl_flid_s, '
+#msg emsg ':priorpb_obvupl_id_s, :priorpb_pospar_sif_s, '
+#msg emsg ':priorpb_idenos_jmbg_ide_s, :priorpb_ulakt_urubro, '
+#msg emsg ':priorpb_predmet_flid, :priorpb_predmet_klozna )   '
+  sql insert into priorpb      \
+    (id, datun, datnas, datzap, datprij,  userid, evbrdok, goddok, vrtis,  \
+      email, ebroj, osig_id, osig_flid,idenos_jmbg,inoos_id, inoos_flid, \
+      obvupl_flid, obvupl_id, pospar_sif, idenos_jmbg_ide, \
+      zdrdje_id, davzu_sif, \
+      zdrdje_id_s,smrposl_id_s,obvupl_flid_s, obvupl_id_s, pospar_sif_s, \
+      idenos_jmbg_ide_s, \
+	  razdoz_id, lokhzzo_siflok, djelnkd_id, brzap_id ,\
+      ulakt_urubro, predmet_flid, predmet_klozna )   \
+    values   \
+    (0,":curr_date",":priorpb_datnas" , ":priorpb_datzap", ":priorpb_datprij", \
+     ":priorpb_userid", ":priorpb_evbrdok", ":priorpb_goddok", "1", \
+      ":priorpb_email", ":priorpb_ebroj", ":priorpb_osig_id",  \
+	  ":priorpb_osig_flid", ":priorpb_idenos_jmbg", ":priorpb_inoos_id",   \
+	  ":priorpb_inoos_flid", \
+      ":priorpb_obvupl_flid", ":priorpb_obvupl_id", ":priorpb_pospar_sif", \
+	  ":priorpb_idenos_jmbg_ide", \
+      ":priorpb_zdrdje_id", ":priorpb_davzu_sif",   \
+     ":priorpb_zdrdje_id_s",":priorpb_smrposl_id_s",":priorpb_obvupl_flid_s", \
+	  ":priorpb_obvupl_id_s", ":priorpb_pospar_sif_s", \
+      ":priorpb_idenos_jmbg_ide_s", \
+	  "4", ":priorpb_lokhzzo_siflok", \
+	  ":priorpb_djelnkd_id", ":priorpb_brzap_id" , \
+	  ":priorpb_ulakt_urubro", \
+	  ":priorpb_predmet_flid", ":priorpb_predmet_klozna" )   
+
+
+return
+
+
+proc brSlucajaOZ
+vars brsluc d1 d2 i sluc
+
+cat priorpb_goddok curr_date(7,4)
+
+  dbms alias brsluc 
+   sql select max(evbrdok) from priorpb  \
+   where goddok = ":priorpb_goddok"
+
+    if brsluc == ''
+       cat brsluc '1'
+    else  
+     math%.0 brsluc = brsluc + 1
+
+    length d1 brsluc
+    math%.0 d2 = 7 - d1 
+
+    for i = 1 while i<= d2 step 1
+    {
+       math %.0 i=i
+       cat brsluc  "0" ":brsluc"
+     }
+    cat priorpb_evbrdok brsluc
+    cat sluc  priorpb_goddok priorpb_evbrdok
+
+return
+
+proc insertOstaloOZ
+
+jpl insertOzljeda
+jpl insertOzosoba
+jpl insertOzDr
+if buffer[17] != "" || buffer[18] != ""
+{
+cat ozkon_broj        ":buffer[17]"
+cat ozkon_email       ":buffer[18]"
+cat ozkon_oznaka      "Z"
+jpl insertOzKon
+}
+if buffer[64] != "" || buffer[65] != ""
+{
+cat ozkon_broj        ":buffer[65]"
+cat ozkon_email       ":buffer[66]"
+cat ozkon_oznaka      "R"
+jpl insertOzKon
+}
+if buffer[57] != "" || buffer[58] != ""
+{
+cat ozkon_broj        ":buffer[57]"
+cat ozkon_email       ":buffer[58]"
+cat ozkon_oznaka      "O"
+jpl insertOzKon
+}
+#popunio tiskanicu, nema?
+if buffer[17] != "" || buffer[18] != ""
+{
+cat ozkon_broj        ":buffer[69]"
+cat ozkon_email       ":buffer[70]"
+cat ozkon_oznaka      "P"
+jpl insertOzKon
+}
+jpl insertOzAdr
+
+return
+
+proc insertTextOZ
+#1-radni okoliš, 2-radni proces, 3-spec.akt.u vrijeme ozlj.,
+#4-poremeæaj u rad.procesu, 5- kontakt-naèin ozljeðivanja
+if buffer[3] == "1" 
+   jpl insertRadOkoT
+else if buffer[3] == "2" 
+   jpl insertRadProcT
+else if buffer[3] == "3" 
+   jpl insertSpecAktT
+else if buffer[3] == "4" 
+   jpl insertRadPorT
+else if buffer[3] == "5" 
+   jpl insertKonNacT
+
+return
+
+proc insertOzljeda
+
+#msg emsg "OZid :OZid"
+cat ozljeda_id           "0"
+cat ozljeda_rukov        ":buffer[59]"
+if buffer[60] != ""
+   cat buffer[60] ", "
+if buffer[62] != ""
+   jpl vadiNaseljeOz ":buffer[62]"
+else 
+   cat nazNaselja
+if nazNaselja != ""
+   cat nazNaselja Hptbr " " nazPosta ", " nazNaselja ", "
+
+cat ozljeda_adresar      nazNaselja   ":buffer[63] " ":buffer[64]"
+cat ozljeda_ocevidac     ":buffer[52]"
+if buffer[54] != ""
+   jpl vadiNaseljeOz ":buffer[54]"
+else 
+   cat nazNaselja
+if nazNaselja != ""
+   cat nazNaselja Hptbr " " nazPosta ", " nazNaselja ", "
+cat ozljeda_adresao      nazNaselja  ":buffer[55] " ":buffer[56]" 
+cat ozljeda_ulicaoz      ":buffer[31]"
+cat ozljeda_kucbr        ":buffer[32]"
+# lokacija gdje se ozljeda dogodikla ako se dogodi izvan RH
+if buffer[34] != "HRV" && buffer[34] != "" 
+   cat ozljeda_ulicaoz       ":buffer[35]"
+cat ozljeda_tezina       ":buffer[36]"
+#Predvið.kor.zašt.sred.
+cat ozljeda_zastita3     ":buffer[42]"
+#Korišt.zašt.sredstva
+cat ozljeda_zastita2     ":buffer[43]"
+#Radnik osposob.za sigur.rad
+cat ozljeda_radsig       ":buffer[44]"
+#Prim.osn.pravila zaš.na radu
+cat ozljeda_znro         ":buffer[45]"
+#Prim.pos.pravila zaš.na radu
+cat ozljeda_znrp         ":buffer[46]"
+#pružena prva pomoæ
+cat ozljeda_prvapom      ":buffer[47]"
+#Provedena istraga
+cat ozljeda_istraga      ":buffer[48]"
+cat ozljeda_istrtko      ":buffer[49]"
+#Oèevid od strane policije
+cat ozljeda_policija     ":buffer[50]"
+#Nadzor od strane inspektora rada
+cat ozljeda_obav         ":buffer[51]"
+#izvuci iz podataka tko je popunio tiskanicu - nema u slogu??
+if buffer[71] != ""
+{
+   dbms alias Popunio
+   sql select trim(ime)  || " " || trim(prezime) from idenos \
+	   where zdrmb = ":buffer[71]"
+cat ozljeda_osop1        Popunio
+}
+else 
+   cat ozljeda_osop1     ""
+cat ozljeda_osop2        ""
+#Odgovorna osoba
+cat ozljeda_odgov        ":buffer[67]" ", " ":buffer[68]"  
+cat ozljeda_priorpb_id   OZid
+cat ozljeda_vriozlj_id   ":buffer[28]"
+cat ozljeda_naselje_id   ":buffer[30]"
+cat ozljeda_zupanija_id  ":buffer[33]"
+cat ozljeda_vrstaoz_id   ":buffer[37]" 
+cat ozljeda_diotijeu_id  ":buffer[38]"
+cat ozljeda_mjrad_sifra  ":buffer[39]"
+cat ozljeda_drzava_ik3   ":buffer[34]"
+#Uzrok ozljede
+cat ozljeda_uzroz_id     ":buffer[41]"
+
+#     msg emsg "%N :ozljeda_id, \
+#  zastita2 :ozljeda_zastita2,znro :ozljeda_znro,znrp :ozljeda_znrp, \   
+#     pol :ozljeda_policija,rukov :ozljeda_rukov,adr :ozljeda_adresar,\
+#     ocev :ozljeda_ocevidac,adro :ozljeda_adresao ,obav :ozljeda_obav, \
+#     ul :ozljeda_ulicaoz,kuc :ozljeda_kucbr ,tez :ozljeda_tezina, \
+#     z3 :ozljeda_zastita3 ,rads :ozljeda_radsig ,prvapom :ozljeda_prvapom ,\
+#     ist :ozljeda_istraga,tko :ozljeda_istrtko,osop1 :ozljeda_osop1 ,\
+#     osop2 :ozljeda_osop2,odgov :ozljeda_odgov, \
+#     vri :ozljeda_vriozlj_id,nas :ozljeda_naselje_id,zup :ozljeda_zupanija_id,\
+#   priorpb_id :ozljeda_priorpb_id, \
+#vrsta :ozljeda_vrstaoz_id,diot :ozljeda_diotijeu_id,mjrad :ozljeda_mjrad_sifra ,\
+#  drz :ozljeda_drzava_ik3  ,uzro :ozljeda_uzroz_id   )"
+
+  dbms onerror continue
+  sql insert into ozljeda      \
+      (id,  \
+   	  zastita2, znro,znrp, policija, rukov  , adresar, \
+       ocevidac, adresao , obav   , ulicaoz,kucbr , tezina, \
+       zastita3 , radsig   , prvapom , istraga, istrtko, osop1 , \
+       osop2, odgov,   vriozlj_id , naselje_id , zupanija_id, \
+	   priorpb_id, \
+       vrstaoz_id,diotijeu_id , mjrad_sifra  , drzava_ik3  , uzroz_id   ) \
+   values  \
+       (":ozljeda_id", \
+	   ":ozljeda_zastita2", ":ozljeda_znro", ":ozljeda_znrp", \   
+        ":ozljeda_policija", ":ozljeda_rukov"  , ":ozljeda_adresar",\
+        ":ozljeda_ocevidac", ":ozljeda_adresao" , ":ozljeda_obav", \
+        ":ozljeda_ulicaoz", ":ozljeda_kucbr" , ":ozljeda_tezina", \
+        ":ozljeda_zastita3" , ":ozljeda_radsig"   , ":ozljeda_prvapom" ,\
+        ":ozljeda_istraga", ":ozljeda_istrtko", ":ozljeda_osop1" ,\
+        ":ozljeda_osop2", ":ozljeda_odgov", \
+        ":ozljeda_vriozlj_id", ":ozljeda_naselje_id", ":ozljeda_zupanija_id",\
+	    ":ozljeda_priorpb_id", \
+        ":ozljeda_vrstaoz_id",":ozljeda_diotijeu_id",":ozljeda_mjrad_sifra" ,\
+        ":ozljeda_drzava_ik3"  , ":ozljeda_uzroz_id"   )
+
+    if @dmretcode != 0 || @dmengerrcode  != 0
+	{
+       msg emsg "Nije uspio insert u tablicu ozljeda!"
+	   cat GresOZ "1"
+	   jpl GreskaOzljeda (":buffer[2]","Nije uspio insert u tablicu ozljeda za ebroj :buffer[2]!")
+       return 
+    }
+    dbms onerror jpl handleError
+return
+
+proc insertOzosoba
+
+cat ozosoba_id           "0"
+cat ozosoba_stat         ":buffer[21]"
+cat ozosoba_vrrad        ":buffer[22]"
+cat ozosoba_radvr        ":buffer[23]"
+cat ozosoba_period       ""  
+cat ozosoba_sati         ":buffer[26]"
+#0-nepoznato,1-redovitog,2-produženog,3-izvanrednog
+cat ozosoba_vrsta        ":buffer[40]"
+cat ozosoba_spol         ":buffer[16]"
+cat ozosoba_drzav        ":buffer[19]"
+cat ozosoba_radvrdan     ":buffer[24]"
+cat ozosoba_periodoz     ":buffer[27]"
+cat ozosoba_gg           ""
+cat ozosoba_razdob       ""
+cat ozosoba_strspr_id_r  ""
+cat ozosoba_priorpb_id   OZid
+cat ozosoba_drzava_ik3   ":buffer[20]"
+cat ozosoba_zannkz_id    ":buffer[25]"
+cat ozosoba_zannkz_id_p  ""
+
+  sql insert into ozosoba      \
+      (id , stat,   vrrad, radvr , period, sati , vrsta, spol , drzav ,  \
+       radvrdan , periodoz, gg, razdob, strspr_id_r, priorpb_id , drzava_ik3 ,\
+       zannkz_id , zannkz_id_p)\
+      values \
+      (":ozosoba_id", ":ozosoba_stat", ":ozosoba_vrrad", ":ozosoba_radvr" , \
+       ":ozosoba_period", ":ozosoba_sati",":ozosoba_vrsta", ":ozosoba_spol" , \
+        ":ozosoba_drzav" ,  ":ozosoba_radvrdan" , ":ozosoba_periodoz", \
+        ":ozosoba_gg", ":ozosoba_razdob", ":ozosoba_strspr_id_r", \
+        ":ozosoba_priorpb_id" , ":ozosoba_drzava_ik3" , \
+        ":ozosoba_zannkz_id" , ":ozosoba_zannkz_id_p")
+return
+
+proc insertOzDr
+cat ozdr_id             "0"
+if buffer[77] != ""
+   jpl vadiNaseljeOz ":buffer[77]"
+else 
+   cat nazNaselja
+if nazNaselja != ""
+   cat nazNaselja Hptbr " " nazPosta ", " nazNaselja ", "
+#Ime, prezime, adresa doktora koji je prvi pregledao ozlijeðenu osobu
+if buffer[74] != ""
+{
+   dbms alias PrviDr, MatPrviDr
+   sql select trim(ime)  || " " || trim(prezime),matbr from zdrdje \
+	   where id = ":buffer[74]"
+   cat PrviDr MatPrviDr " " PrviDr ", "
+}
+else if buffer[75] != ""
+   cat PrviDr buffer[75] ", "
+else
+   cat PrviDr
+cat ozdr_prvapom        PrviDr ", " nazNaselja  ":buffer[78] " ":buffer[79]"  
+cat ozdr_opis           ":buffer[88]"    
+cat ozdr_nedos          ":buffer[85]"
+cat ozdr_test           ":buffer[86]"
+cat ozdr_osnov          ":buffer[73]"
+cat ozdr_drugeb         ":buffer[82]"
+cat ozdr_fizpsih        ":buffer[84]"
+cat ozdr_bolest         ":buffer[83]"
+cat ozdr_rezult         ":buffer[87]"
+cat ozdr_datum          ":buffer[89]"
+cat ozdr_zdrdje_id      ":buffer[74]"
+cat ozdr_davzu_sif      ":buffer[80]"
+cat ozdr_dijag_dijid_d  ":buffer[81]" 
+cat ozdr_priorpb_id     OZid
+
+#vars post idnas nazul kucbr
+#cat post ":buffer[75]"
+#cat idnas ":buffer[76]"
+#cat nazul ":buffer[77]"
+#cat kucbr ":buffer[78]"
+
+  sql insert into ozdr      \
+      ( id , prvapom, opis, nedos, test, osnov,  \
+        drugeb , fizpsih, bolest, rezult, datum, zdrdje_id ,  \
+        davzu_sif, dijag_dijid_d, priorpb_id  )  \
+      values \
+      (":ozdr_id",":ozdr_prvapom",":ozdr_opis", ":ozdr_nedos", ":ozdr_test", \ 
+       ":ozdr_osnov", ":ozdr_drugeb", ":ozdr_fizpsih", ":ozdr_bolest",  \
+       ":ozdr_rezult", ":ozdr_datum", ":ozdr_zdrdje_id" , ":ozdr_davzu_sif",  \
+       ":ozdr_dijag_dijid_d", ":ozdr_priorpb_id"  )
+return
+
+proc insertOzKon
+#kontakti vezani za ozljedu na radu
+#Z-ozlijeðeni zaposlenik,R-rukovoditelj,O-oèevidac,P-popunio tiskanicu
+
+cat ozkon_id          "0"
+
+cat ozkon_priorpb_id  OZid
+
+  sql insert into ozkon      \
+      (id, broj, email, oznaka, priorpb_id  )  \
+       values \
+      (":ozkon_id", ":ozkon_broj", ":ozkon_email", ":ozkon_oznaka", \
+	   ":ozkon_priorpb_id"  )
+
+return
+
+proc insertRadOkoT
+#oznaka 1
+
+cat radokot_redbr       ":buffer[4]"
+cat radokot_tekst       :+buffer[5]
+cat radokot_priorpb_id  OZid
+
+  sql insert into radokot      \
+      (redbr, tekst,priorpb_id  )  \
+       values \
+      (:+radokot_redbr, :+radokot_tekst,:+radokot_priorpb_id  ) 
+
+return
+
+proc insertRadProcT
+#oznaka 2
+
+cat radproct_redbr       ":buffer[4]"
+cat radproct_tekst       ":buffer[5]"
+cat radproct_priorpb_id  OZid
+
+  sql insert into radproct      \
+      (redbr, tekst,priorpb_id  )  \
+       values \
+      (:+radproct_redbr, :+radproct_tekst,:+radproct_priorpb_id  ) 
+return
+
+proc insertSpecAktT
+#oznaka 3
+
+cat specaktt_redbr       ":buffer[4]"
+cat specaktt_tekst       ":buffer[5]"
+cat specaktt_priorpb_id  OZid
+
+  sql insert into specaktt     \
+      (redbr, tekst,priorpb_id  )  \
+       values \
+      (:+specaktt_redbr, :+specaktt_tekst,:+specaktt_priorpb_id  ) 
+return
+
+proc insertRadPorT
+#oznaka 4
+
+cat radport_redbr       ":buffer[4]"
+cat radport_tekst       ":buffer[5]"
+cat radport_priorpb_id  OZid
+
+  sql insert into radport      \
+      (redbr, tekst,priorpb_id  )  \
+       values \
+      (:+radport_redbr, :+radport_tekst,:+radport_priorpb_id  ) 
+return
+
+proc insertKonNacT
+#oznaka 5
+cat konnact_redbr       ":buffer[4]"
+cat konnact_tekst       ":buffer[5]"
+cat konnact_priorpb_id  OZid
+
+#   msg emsg 'kon ":konnact_redbr", ":konnact_tekst",":konnact_priorpb_id"   '
+  sql insert into konnact      \
+      (redbr, tekst,priorpb_id  )  \
+       values \
+      (:+konnact_redbr, :+konnact_tekst,:+konnact_priorpb_id  ) 
+
+return
+
+proc insertDijag
+#TU SAM1
+cat orpbdij_rbr             rbrDij
+cat orpbdij_datzap          priorpb_datzap
+cat orpbdij_klasa           priorpb_predmet_klozna
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "01"
+   cat orpbdij_urubro          priorpb_ulakt_urubro
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
+   cat orpbdij_urubro          ulakt_urubro
+cat orpbdij_vrsta           "P"
+cat orpbdij_userid          "e-ozljeda"
+cat orpbdij_dijag_dijid     ":buffer[3]"
+cat orpbdij_priorpb_id      OZid
+cat orpbdij_lokhzzo_siflok  priorpb_lokhzzo_siflok
+
+#msg emsg 'orpbdij :rbrDij ":orpbdij_vrsta" ,":orpbdij_userid", ":orpbdij_dijag_dijid" '  
+  sql insert into orpbdij      \
+      (rbr, datzap, klasa, urubro, vrsta, userid,  \
+       dijag_dijid, priorpb_id , lokhzzo_siflok)   \
+       values \
+      ( ":orpbdij_rbr", ":orpbdij_datzap",":orpbdij_klasa",":orpbdij_urubro", \
+        ":orpbdij_vrsta" ,":orpbdij_userid", ":orpbdij_dijag_dijid",  \
+        ":orpbdij_priorpb_id" , ":orpbdij_lokhzzo_siflok" )
+
+
+return
+
+proc insertOzAdr
+#adresa ozlijeðene osobe
+
+cat ozadr_id          "0"
+cat ozadr_ulica       ":buffer[14]"
+cat ozadr_kucbr       ":buffer[15]"
+cat ozadr_hptbroj     ":buffer[12]"
+cat ozadr_priorpb_id  OZid
+cat ozadr_naselje_id  ":buffer[13]"
+
+
+  sql insert into ozadr      \
+      (id,  ulica,  kucbr, hptbroj, priorpb_id , naselje_id)  \
+       values \
+      ( ":ozadr_id",  ":ozadr_ulica",  ":ozadr_kucbr", ":ozadr_hptbroj", \
+		":ozadr_priorpb_id" , ":ozadr_naselje_id")
+
+return
+
+
+proc vratiUruPrvi
+# ako je sve uspješno prošlo, formiram unl koji se vraæa
+cat slucaj priorpb_goddok priorpb_evbrdok
+call File_open "fileUru.txt" 'a'
+call File_write "fileUru.txt" ':priorpb_ebroj|' 1
+#jedinstveni identifikator dokumenta za koji se traži ur.br.
+#kod prijave je to id e-ozljede
+#kako sprijeèiti da se dvaput isto urudžbira
+call File_write "fileUru.txt" ':identifikator|' 1
+call File_write "fileUru.txt" ':priorpb_obvupl_flid|' 1
+call File_write "fileUru.txt" ':priorpb_obvupl_id|' 1
+call File_write "fileUru.txt" ':slucaj|' 1
+#ozvrdat 1 Prijava ozljede na radu
+call File_write "fileUru.txt" ':ozvrdat_id|' 1
+call File_write "fileUru.txt" ':priorpb_predmet_klozna|' 1
+call File_write "fileUru.txt" ':priorpb_ulakt_urubro|' 1
+#oznaka greške
+call File_write "fileUru.txt" ':ozgres_id|' 
+call File_close "fileUru.txt"
+
+return
+
+proc vadiNaseljeOz
+parms idNaselja
+
+dbms alias nazNaselja, nazPosta, Hptbr
+sql select n.naziv, p.naziv, p.hptbroj from naselje n, posta p \
+	where id = :idNaselja and n.posta_hptbroj = p.hptbroj
+dbms alias 
+
+return
+
+proc updateOz
+
+#dodaj oznaku statusa buffer[6]
+#msg emsg "Mijenjam prijavu"
+vars voditelj
+cat voditelj           ":buffer[7]"
+if voditelj != ""
+{
+   dbms alias priorpb_djel1_matbr
+   sql select matbr from djel1 d, idenos i   \
+	   where i.zdrmb = ":voditelj"   \
+	   and i.jmbg = d.idenos_jmbg
+   dbms alias 
+}
+else 
+  cat priorpb_djel1_matbr
+cat priorpb_datpriz    ":buffer[8]"
+cat priorpb_datnepr    ":buffer[9]"
+#prekid postupka
+cat priorpb_datodb     ":buffer[10]"
+cat priorpb_datobu     ":buffer[11]"
+cat priorpb_dodbac     ":buffer[12]"
+cat priorpb_lptim_id_l ":buffer[13]"
+if priorpb_lptim_id_l != ""
+{
+   dbms alias priorpb_lptim_datod_l, priorpb_lokhzzo_siflok_l
+   sql select datod, lokhzzo_siflok from lptim \
+       where id = :priorpb_lptim_id_l
+dbms alias 
+}
+else
+{
+   cat priorpb_lptim_datod_l
+   cat priorpb_lokhzzo_siflok_l
+}
+cat priorpb_orpb       ":buffer[14]"
+cat priorpb_evbroj     ":buffer[14](1,5)"
+cat priorpb_kont       ":buffer[14](12,1)"
+cat priorpb_godpri     ":buffer[14](14,4)"
+cat priorpb_raznepr_id ":buffer[15]"
+sql update  priorpb \
+	set datpriz =  ":priorpb_datpriz" , datnepr = ":priorpb_datnepr" ,  \
+        datodb = ":priorpb_datodb", datobu = ":priorpb_datobu",   \
+        dodbac = ":priorpb_dodbac", lptim_id_l = ":priorpb_lptim_id_l" , \
+        lptim_datod_l = ":priorpb_lptim_datod_l", \
+		lokhzzo_siflok_l = ":priorpb_lokhzzo_siflok_l",  \
+        orpb = ":priorpb_orpb", evbroj = ":priorpb_evbroj" ,  \
+        kont = ":priorpb_kont", godpri = ":priorpb_godpri" , \
+        raznepr_id = ":priorpb_raznepr_id", \
+		djel1_matbr = ":priorpb_djel1_matbr" \
+		where ebroj = ":buffer[2]"
+
+	cat gr_code1 @dmengerrcode
+	cat gr_code2 @dmretcode
+
+    dbms onerror jpl handleError
+    if (gr_code1 != 0 || gr_code2 != 0)
+    {
+        msg emsg "%NNije uspjela promjena prijave  <:gr_code1/:gr_code2>"   
+    }
+
+return
+
+proc updDijag
+#msg emsg "Mijenjam dijagnozu"
+vars oznaka, P_rbr, P_dijag_dijid, P_mkb
+cat orpbdij_datpriz 
+cat orpbdij_datprava 
+cat orpbdij_datnepr 
+cat orpbdij_dijag_dijid ":buffer[3]"
+if Buffer3(1,2) == "_V"
+{
+   cat oznaka ":buffer[4]"
+   #kod djel.priznavanja dat.nepr se vidi samo na dijag, i jednak je dat.priz
+   if oznaka = "0"
+      cat orpbdij_datnepr priorpb_datnepr
+   else if oznaka = "1"
+   {
+      cat orpbdij_datpriz priorpb_datpriz
+      cat orpbdij_datprava priorpb_datnas
+   }      
+}
+else if Buffer3(1,2) == "_P"
+{
+      cat orpbdij_datpriz 
+      cat orpbdij_datprava 
+      cat orpbdij_datnepr 
+}
+dbms alias P_rbr, P_dijag_dijid, P_mkb
+sql select rbr, dijag_dijid, d.mkbsif from orpbdij o, dijag d \
+	where priorpb_id = :OZid \
+	  and dijag_dijid = :orpbdij_dijag_dijid and o.dijag_dijid = d.dijid
+dbms alias 
+#msg emsg "%NP_rbr/:P_rbr/:P_mkb/"
+#IB 28052018
+#Buffer3
+#else if Buffer3(1,2) == "_P"
+#if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
+#if Buffer3(4,2) == "01"
+#{
+   if P_rbr > 0 
+   {
+   #msg emsg "%NP_rbr upd dij/:P_rbr/:P_mkb/:P_dijag_dijid/:orpbdij_datpriz/:orpbdij_datnepr/:orpbdij_datprava"
+   sql update orpbdij \
+	   set datpriz = ":orpbdij_datpriz", datnepr = ":orpbdij_datnepr",  \
+		   datprava = ":orpbdij_datprava"  \
+	   where priorpb_id = :OZid \
+	   and dijag_dijid = :P_dijag_dijid \
+	   and rbr = :P_rbr
+	   
+   }
+   if P_rbr = ""
+   {
+     vars maxRbr
+     dbms alias maxRbr
+     sql select max(rbr) from orpbdij \
+         where priorpb_id = :OZid 
+     dbms alias 
+     if maxRbr == ""
+        math%.0 maxRbr =  1
+     else 
+        math%.0 maxRbr = maxRbr + 1
+#msg emsg "insert :maxRbr, :OZdatzap,:OZklasa,:OZuru,:orpbdij_datprava,\
+#  :orpbdij_datpriz, :orpbdij_datnepr,:orpbdij_dijag_dijid,:OZid,:OZlokhzzo" 
+#DORADI!!!
+     sql insert into orpbdij      \
+      (rbr, datzap, klasa, urubro, datprava, datpriz, datnepr, vrsta, userid,  \
+       dijag_dijid, priorpb_id , lokhzzo_siflok)   \
+       values \
+      ( ":maxRbr", ":OZdatzap",":OZklasa",":OZuru", \
+		":orpbdij_datprava", ":orpbdij_datpriz", ":orpbdij_datnepr", \
+        "P", "e-ozljeda", ":orpbdij_dijag_dijid", ":OZid", ":OZlokhzzo" )
+   }
+#}
+return
+
+proc delDijag
+if Buffer3(1,2) == "_P" && Buffer3(4,2) == "02"
+{
+   sql delete from orpbdij \
+       where priorpb_id = :OZid 
+}
+return
+
+proc GreskaOzljeda
+parms gr_opis gr_ebroj
+dbms onerror continue
+
+call File_open GreskaOz "w"
+call File_write GreskaOz ":gr_ebroj/:gr_opis"
+call File_close GreskaOz
+
+dbms rollback
+
+dbms onerror jpl handleError
+
+return
